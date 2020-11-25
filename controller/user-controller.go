@@ -3,12 +3,12 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/geekfarmer/multi-thread-comments/entity"
 	"github.com/geekfarmer/multi-thread-comments/errors"
 	"github.com/geekfarmer/multi-thread-comments/service"
+	"github.com/gorilla/mux"
 )
 
 type controller struct {
@@ -19,6 +19,8 @@ var userService service.UserService
 type UserController interface {
 	CreateUser(response http.ResponseWriter, request *http.Request)
 	FindAll(response http.ResponseWriter, request *http.Request)
+	GetUser(response http.ResponseWriter, request *http.Request)
+	DeleteUser(response http.ResponseWriter, request *http.Request)
 	UpdateUser(response http.ResponseWriter, request *http.Request)
 }
 
@@ -32,21 +34,10 @@ func (*controller) CreateUser(response http.ResponseWriter, request *http.Reques
 	var user *entity.User
 	_ = json.NewDecoder(request.Body).Decode(&user)
 
-	if len(user.UserToken) == 0 {
-		response.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(response).Encode(errors.GenericError{Message: "Token can't be null"})
-		return
-	}
-	if len(user.Phone) == 0 {
-		response.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(response).Encode(errors.GenericError{Message: "Number can't be null"})
-		return
-	}
-
 	user, err := userService.Create(user)
 	if err != nil {
 		response.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(response).Encode(errors.GenericError{Message: "Error getting the users"})
+		json.NewEncoder(response).Encode(errors.GenericError{Message: `Error creating user.`})
 		return
 	}
 	response.WriteHeader(http.StatusOK)
@@ -67,11 +58,43 @@ func (*controller) FindAll(response http.ResponseWriter, request *http.Request) 
 	json.NewEncoder(response).Encode(user)
 }
 
+func (*controller) GetUser(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(request)
+	id := vars["id"]
+	user, err := userService.FindByID(id)
+
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(errors.GenericError{Message: "Error getting the user"})
+		return
+	}
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(user)
+}
+
+func (*controller) DeleteUser(response http.ResponseWriter, request *http.Request) {
+	response.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(request)
+	id := vars["id"]
+	err := userService.Delete(id)
+
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(response).Encode(errors.GenericError{Message: "Error deleting user"})
+		return
+	}
+	response.WriteHeader(http.StatusOK)
+	json.NewEncoder(response).Encode(nil)
+}
+
 func (*controller) UpdateUser(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("Content-Type", "application/json")
-	user, err := getUserD(response, request)
+	vars := mux.Vars(request)
+	id := vars["id"]
+	user, err := userService.FindByID(id)
 
-	if err == "err" {
+	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(response).Encode(errors.GenericError{Message: "User not found"})
 		return
@@ -89,12 +112,4 @@ func (*controller) UpdateUser(response http.ResponseWriter, request *http.Reques
 
 	response.WriteHeader(http.StatusOK)
 	json.NewEncoder(response).Encode(user)
-}
-
-func getUserD(response http.ResponseWriter, request *http.Request) (*entity.User, string) {
-	authToken := request.Header.Get("Authorization")
-	splitAuthToken := strings.Split(authToken, " ")
-	token := splitAuthToken[1]
-	user, _ := uService.FindByToken(token)
-	return user, "-"
 }

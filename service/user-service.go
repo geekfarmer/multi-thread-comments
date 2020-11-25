@@ -2,10 +2,11 @@ package service
 
 import (
 	"errors"
+	"time"
 
 	"github.com/geekfarmer/multi-thread-comments/entity"
 	"github.com/geekfarmer/multi-thread-comments/repository"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	sid "github.com/lithammer/shortuuid"
 )
 
 type service struct{}
@@ -28,7 +29,9 @@ func (*service) Validate(user *entity.User) error {
 }
 
 func (*service) Create(user *entity.User) (*entity.User, error) {
-	user.ID = primitive.NewObjectID()
+	user.ID = sid.New()
+	user.CreatedAt = time.Now().UTC()
+	user.UpdatedAt = time.Now().UTC()
 	return repo.Create(user)
 }
 
@@ -36,14 +39,15 @@ func (*service) FindAll() ([]entity.User, error) {
 	return repo.FindAll()
 }
 
-func (*service) Delete(user *entity.User) error {
-	return repo.Delete(user)
+func (*service) Delete(id string) error {
+	return repo.Delete(id)
 }
 
-func (*service) FindByToken(token string) (*entity.User, error) {
-	user, _ := repo.FindByToken(token)
+func (*service) FindByID(id string) (*entity.User, error) {
+	user, _ := repo.FindByID(id)
 	return user, nil
 }
+
 func (*service) UpdateUser(user *entity.User) (*entity.User, error) {
 	u, _ := repo.UpdateUser(user)
 	return u, nil

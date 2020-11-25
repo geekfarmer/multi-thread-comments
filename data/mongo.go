@@ -12,7 +12,7 @@ import (
 
 func Connect() *mongo.Database {
 	// Database Config
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/")
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	client, err := mongo.NewClient(clientOptions)
 	//Set up a context required by mongo.Connect
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -28,6 +28,6 @@ func Connect() *mongo.Database {
 		log.Println("Connected!")
 	}
 	// Connect to the database
-	db := client.Database("go_mongo")
+	db := client.Database("comments-service")
 	return db
 }

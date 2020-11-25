@@ -10,16 +10,15 @@ import (
 )
 
 var (
-	database           *mongo.Database               = data.Connect()
-	userRepository     repository.UserRepository     = repository.NewUserMongoRepository(database)
-	appRepository      repository.AppRepository      = repository.NewAppMongoRepository(database)
-	userService        service.UserService           = service.NewUserService(userRepository)
-	appService         service.AppService            = service.NewAppService(appRepository)
-	userController     controller.UserController     = controller.NewUserController(userService)
-	appController      controller.AppController      = controller.NewAppController(appService, userService)
-	currencyController controller.CurrencyController = controller.NewCurrencyController()
-	httpRouter         router.Router                 = router.NewMuxRouter()
-	initializer        router.Init                   = router.Initialize(userController, appController, currencyController, httpRouter)
+	database          *mongo.Database              = data.Connect()
+	userRepository    repository.UserRepository    = repository.NewUserMongoRepository(database)
+	userService       service.UserService          = service.NewUserService(userRepository)
+	userController    controller.UserController    = controller.NewUserController(userService)
+	commentRepository repository.CommentRepository = repository.NewCommentMongoRepository(database)
+	commentService    service.CommentService       = service.NewCommentService(commentRepository)
+	commentControllet controller.CommentController = controller.NewCommentController(commentService)
+	httpRouter        router.Router                = router.NewMuxRouter()
+	initializer       router.Init                  = router.Initialize(userController, commentControllet, httpRouter)
 )
 
 func main() {
